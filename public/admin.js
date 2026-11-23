@@ -47,8 +47,8 @@ async function submit(validate=false) {
   message(validate?'Consultando la fuente…':'Verificando y guardando configuración…');
   try{
     const data=await api(validate?'validate':'leagues',payload);
-    if(validate){checkReport(data);message(data.blockers.length?'Revisa los problemas de la fuente antes de activar la liga.':'La fuente respondió correctamente.',!!data.blockers.length);}
-    else {dirty=false;await load();edit(data.league);if(data.check)checkReport(data.check);message('Cambios guardados. El catálogo público ya usa esta configuración.');}
+    if(validate){checkReport(data);message(data.blockers.length?'Puedes activar la liga; sus proyecciones estarán pausadas mientras la fuente requiera revisión.':'La fuente respondió correctamente.',!!data.blockers.length);}
+    else {dirty=false;await load();edit(data.league);if(data.check)checkReport(data.check);message(data.check?.blockers.length?'Liga guardada. La tabla está disponible; las proyecciones quedan pausadas hasta que la fuente permita simular con seguridad.':'Cambios guardados. El catálogo público ya usa esta configuración.');}
   }catch(e){message(e.message,true);}finally{busy=false;$('fields').disabled=false;}
 }
 $('leagueCards').onclick=e=>{const b=e.target.closest('[data-edit]');if(b)edit(rows.find(r=>r.id===b.dataset.edit));};
