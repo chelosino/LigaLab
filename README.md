@@ -1,43 +1,50 @@
-# LigaLab Live — versión para Vercel
+# LigaLab · simulación personal y administración
 
-Paquete preparado para desplegar, aún no publicado ni validado en la infraestructura de Vercel. Frontend en public/, función Node en api/index.js y extracción en lib/. No se necesita Python, base de datos ni claves para la fuente actual. No ejecutar el build del paquete anterior de Sites.
+Sitio: https://ligalab-tau.vercel.app/ · Administración: https://ligalab-tau.vercel.app/admin
 
-## Opción 1: GitHub + Vercel
+Cada visitante ajusta y simula sus propios pronósticos en un Web Worker de su navegador. No hay endpoint que reciba escenarios ni resultados de simulaciones. Solo se comparten el catálogo de ligas y los datos del proveedor. Los escenarios se conservan en memoria mientras la pestaña permanece abierta.
 
-1. Sube el contenido de esta carpeta a la raíz de un repositorio GitHub.
-2. En Vercel: Add New → Project → importa ese repositorio.
-3. Selecciona la cuenta/equipo que corresponda. Framework Preset: Other. Root Directory: la carpeta que contiene vercel.json (la raíz si subiste este paquete directamente).
-4. vercel.json configura Output Directory como public, sin Build Command, y una función Node de hasta 30 segundos. Node.js: 22.x. No hay variables de entorno requeridas.
-5. Pulsa Deploy. Verifica que /api/league?league=chile devuelva JSON y que la página muestre CONECTADO y 240 partidos del calendario de Chile de la temporada verificada.
-6. Cambia a Inglaterra y comprueba también /api/league?league=england. El proveedor puede bloquear o responder distinto desde un centro de datos: esta prueba debe hacerse en el despliegue, no basta el test local.
+## Administración
 
-## Opción 2: terminal
+Entra en /admin y solicita un enlace al correo autorizado. Abre el enlace en el mismo navegador donde lo solicitaste (autenticación PKCE). Desde el panel puedes:
 
-Desde esta carpeta, con Node.js instalado:
+- Crear ligas y activar o desactivar las existentes.
+- Editar país y liga de LiveScore, número de equipos, puntos y orden de desempates.
+- Crear hasta 10 zonas con nombre, color y posiciones inicial/final; pueden solaparse.
+- Probar la fuente y ver advertencias antes de guardar.
+- Guardar borradores desactivados aunque el calendario esté incompleto.
 
-```powershell
-npx vercel login
-npx vercel
-```
+Solo se admite tabla única con ida y vuelta. Se conserva la clasificación publicada por LiveScore; los criterios configurados se usan para ordenar las simulaciones. No se modelan playoffs, grupos, enfrentamientos directos ni cupos que dependan de otras competiciones. Las zonas iniciales son exploratorias.
 
-Elige tu cuenta/equipo y un proyecto nuevo llamado ligalab-live. Acepta la configuración del archivo vercel.json. El segundo comando crea un preview. Comprueba la tabla, API y cambio de liga en esa URL. Para publicar producción:
+Las actualizaciones del catálogo se consultan cada 30 segundos con la pestaña visible. Cambiar las reglas recalcula el escenario personal conservando los marcadores fijados que siguen siendo válidos. Cambiar de liga limpia el escenario.
 
-```powershell
-npx vercel --prod
-```
+## Arquitectura y permisos
 
-Vercel entrega la URL del despliegue. No pegues tokens en el chat; el login se hace en tu navegador. También puede importarse desde GitHub para desplegar los próximos cambios al hacer push.
+- public/: interfaz, motor y Web Worker. public/admin.js usa el cliente oficial de Supabase empaquetado por build.mjs.
+- api/index.js: adaptador de rutas Vercel, conserva cabeceras y cuerpos.
+- lib/api.js: datos públicos y API administrativa; verifica la identidad y el rol antes de leer borradores o guardar.
+- lib/catalog.js: validación y acceso a Supabase con clave PUBLICABLE y token del usuario; no usa service_role.
+- schema.sql: esquema de referencia para una base nueva. En el proyecto conectado se aplicó mediante migraciones remotas.
+- public.ligalab_leagues: catálogo, revisión y fecha de modificación.
+- ligalab_private.admins: correos autorizados, inaccesibles al cliente. La autorización comprueba la identidad verificada en auth.users, nunca user_metadata.
+- ligalab_private.audit: historial de configuraciones para auditoría; no almacena simulaciones.
 
-## Datos y actualización
+La seguridad se aplica también en PostgreSQL mediante RLS. Los visitantes solo leen ligas activas. Las escrituras necesitan una cuenta administradora. La revisión impide sobrescribir cambios de otra sesión. Para retirar una liga se desactiva; no hay borrado permanente en la UI. Añadir administradores requiere modificar la lista privada desde Supabase como propietario.
 
-La UI consulta cada 30 segundos mientras está visible. La función hace una petición saliente a LiveScore con timeout de 12 segundos. No requiere cron ni servidor permanente. La caché de 25 segundos y el último resultado son oportunistas, por instancia: se pierden con reinicios y no están compartidos entre instancias de Vercel. Si una instancia nueva no puede consultar la fuente devolverá error; el navegador conserva los datos anteriores ya mostrados y marca el fallo.
+## Despliegue
 
-Para mayor tráfico conviene agregar una caché compartida antes de aumentar usuarios. Esta entrega no contrata recursos ni garantiza que un plan gratuito cubra cualquier volumen. La frecuencia de consulta del navegador se mantiene, pero la frescura también depende de LiveScore.
+Repositorio GitHub chelosino/LigaLab conectado a Vercel. Framework Other, raíz del repositorio, salida public, comando npm run build, Node 22.x. El build empaqueta el SDK de autenticación; las simulaciones siguen siendo código local del navegador.
 
-La tabla proviene del proveedor e incluye sus ajustes administrativos. Los partidos en vivo no se entrenan como finales; la simulación conserva el marcador parcial y estima goles restantes. Criterios de cupos y desempates siguen siendo aproximaciones configurables.
+Variables del servidor: SUPABASE_URL y SUPABASE_PUBLISHABLE_KEY. Copiar .env.example si se configura otro entorno. No introducir claves secretas/service_role en ninguna variable pública.
 
-## Validación local
+Configurar en Supabase Authentication > URL Configuration el Site URL con https://tu-dominio/admin. Autorizar el correo administrador en ligalab_private.admins. El envío de enlaces usa Supabase Auth; el servicio de correo predeterminado tiene límites y restricciones de destinatarios. Para ampliar administradores a otros destinatarios puede ser necesario SMTP propio.
 
-`npm test` comprueba que la adaptación de rutas preserve la liga seleccionada. El motor y el adaptador de datos son los de la entrega anterior, que pasó 12 pruebas. Falta comprobar el empaquetado y acceso a LiveScore desde Vercel tras el primer despliegue.
+## Verificación
 
-Documentación: https://vercel.com/docs/functions/runtimes/node-js y https://vercel.com/docs/project-configuration/vercel-json
+npm ci
+npm test
+npm run build
+
+Las pruebas cubren permisos, validación de fuentes/zonas, conflictos de revisión, rutas con Authorization y cuerpo JSON, motor Poisson y datos en vivo. El acceso real por correo debe probarlo el titular del correo, sin compartir enlaces de acceso.
+
+La fuente se consulta bajo demanda con caché por instancia de 25 segundos, no mediante cron. Un fallo del proveedor se muestra como datos antiguos cuando hay una copia en memoria; si no existe, se informa el error. No se garantiza latencia de LiveScore ni continuidad de su API.

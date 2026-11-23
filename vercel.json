@@ -1,12 +1,37 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": null,
-  "buildCommand": "",
+  "buildCommand": "npm run build",
   "outputDirectory": "public",
-  "functions": { "api/index.js": { "maxDuration": 30 } },
+  "functions": {
+    "api/index.js": {
+      "maxDuration": 30
+    }
+  },
   "rewrites": [
-    { "source": "/api/league", "destination": "/api/index?route=league" },
-    { "source": "/api/leagues", "destination": "/api/index?route=leagues" },
-    { "source": "/api/matches.csv", "destination": "/api/index?route=matches.csv" }
+    {
+      "source": "/api/league",
+      "destination": "/api/index?route=league"
+    },
+    {
+      "source": "/api/leagues",
+      "destination": "/api/index?route=leagues"
+    },
+    {
+      "source": "/api/matches.csv",
+      "destination": "/api/index?route=matches.csv"
+    },
+    {
+      "destination": "/admin.html",
+      "source": "/admin"
+    },
+    {
+      "destination": "/api/index?route=auth-config",
+      "source": "/api/auth-config"
+    },
+    {
+      "destination": "/api/index?route=admin/:action",
+      "source": "/api/admin/:action"
+    }
   ]
 }
