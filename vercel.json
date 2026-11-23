@@ -1,0 +1,12 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "buildCommand": "",
+  "outputDirectory": "public",
+  "functions": { "api/index.js": { "maxDuration": 30 } },
+  "rewrites": [
+    { "source": "/api/league", "destination": "/api/index?route=league" },
+    { "source": "/api/leagues", "destination": "/api/index?route=leagues" },
+    { "source": "/api/matches.csv", "destination": "/api/index?route=matches.csv" }
+  ]
+}
