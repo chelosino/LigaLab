@@ -48,3 +48,11 @@ npm run build
 Las pruebas cubren permisos, validación de fuentes/zonas, conflictos de revisión, rutas con Authorization y cuerpo JSON, motor Poisson y datos en vivo. El acceso real por correo debe probarlo el titular del correo, sin compartir enlaces de acceso.
 
 La fuente se consulta bajo demanda con caché por instancia de 25 segundos, no mediante cron. Un fallo del proveedor se muestra como datos antiguos cuando hay una copia en memoria; si no existe, se informa el error. No se garantiza latencia de LiveScore ni continuidad de su API.
+
+## Instalar como aplicación (PWA)
+
+Abre el sitio y pulsa «Instalar app». Chrome/Edge pueden mostrar el diálogo nativo; si no está disponible aparecen instrucciones. En iPhone/iPad usa Safari > Compartir > Añadir a la pantalla de inicio. Se abre en modo standalone desde su icono, sin tienda de aplicaciones.
+
+La PWA requiere conexión para cargar datos actuales. El service worker guarda exclusivamente una pantalla de aviso sin conexión; no cachea respuestas de API, sesiones ni administración. Si la pestaña ya tiene partidos cargados, el cálculo sigue siendo local. Al cerrar la aplicación se pierden los escenarios en memoria, igual que en la versión web anterior.
+
+El build genera iconos PNG de 192/512 px y Apple Touch de 180 px mediante icons.mjs. El manifiesto y sw.js se sirven con revalidación. No se fuerza una recarga al actualizar el service worker, para no interrumpir una simulación.
